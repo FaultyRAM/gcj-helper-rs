@@ -1,0 +1,17 @@
+[package]
+name = "gcj-helper"
+version = "0.1.0"
+authors = ["FaultyRAM <explodingpsu@gmail.com>"]
+description = "A helper library for use in the Google Code Jam."
+repository = "https://github.com/FaultyRAM/gcj-helper-rs"
+readme = "README.md"
+keywords = ["boilerplate", "code", "jam"]
+license = "Apache-2.0/MIT"
+
+[badges]
+travis-ci = { repository = "https://github.com/FaultyRAM/gcj-helper-rs.git" }
+appveyor = { repository = "https://github.com/FaultyRAM/gcj-helper-rs.git" }
+
+[dependencies]
+clap = "2"
+clippy = { version = "0.0", optional = true }

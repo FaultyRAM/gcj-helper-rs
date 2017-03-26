@@ -33,7 +33,7 @@ use std::fmt::Arguments;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, LineWriter, Lines, Write};
 use std::ops::{Add, AddAssign};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// A set of test cases loaded from an input file.
 #[derive(Debug)]
@@ -50,14 +50,14 @@ pub struct TestCases {
 
 /// Supports reading lines from an input file and writing data to an output file.
 #[derive(Debug)]
-pub struct TestCaseIo<'a>(&'a mut TestCases);
+pub struct TestCaseIo(TestCases);
 
 impl TestCases {
     /// Obtains a set of test cases.
     pub fn new() -> TestCases {
         let arg = env::args().nth(1).expect("input file path not specified");
-        let input_file_path: &Path = arg.as_ref();
-        let output_file_path: PathBuf = input_file_path.with_extension("out");
+        let input_file_path = Path::new(&arg);
+        let output_file_path = input_file_path.with_extension("out");
         assert_ne!(input_file_path, output_file_path);
         let mut test_cases = TestCases {
             input: Self::open_input_file(input_file_path),
@@ -70,8 +70,8 @@ impl TestCases {
     }
 
     /// Consumes a set of test cases, calling a closure once for each test case.
-    pub fn run<F: Fn(&mut TestCaseIo)>(mut self, f: F) {
-        let mut tc_io = TestCaseIo::new(&mut self);
+    pub fn run<F: Fn(&mut TestCaseIo)>(self, f: F) {
+        let mut tc_io = TestCaseIo::new(self);
         while tc_io.0.current_case <= tc_io.0.case_count {
             let current_case_s = tc_io.0.current_case_string();
             let _ = tc_io.write(current_case_s.as_bytes())
@@ -134,7 +134,7 @@ impl Default for TestCases {
     }
 }
 
-impl<'a> TestCaseIo<'a> {
+impl TestCaseIo {
     /// Reads a line from the input file.
     pub fn read_line(&mut self) -> String {
         self.0.read_line()
@@ -151,12 +151,12 @@ impl<'a> TestCaseIo<'a> {
     }
 
     /// Creates a new `TestCaseIo` instance.
-    fn new(test_cases: &'a mut TestCases) -> TestCaseIo<'a> {
+    fn new(test_cases: TestCases) -> TestCaseIo {
         TestCaseIo(test_cases)
     }
 }
 
-impl<'a> Write for TestCaseIo<'a> {
+impl Write for TestCaseIo {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.0.output.write(buf)
     }

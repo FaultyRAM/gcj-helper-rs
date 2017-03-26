@@ -23,17 +23,6 @@
 //! Writing code to handle all of the above is tedious and time-consuming, in a situation where
 //! every microsecond counts. `gcj-helper` is designed to handle the boilerplate, so you can focus
 //! on writing solutions instead.
-//!
-//! # Example
-//!
-//! ```rust
-//! use gcj_helper::TestEngine;
-//! use std::io::Write;
-//! TestEngine::new("./foo.in", "./foo.out").run(|io_helper| {
-//!     let line = io_helper.read_line();
-//!     writeln!(io_helper, " {}", line).unwrap(); // `"Case #N: foo\n"`
-//! });
-//! ```
 
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy))]

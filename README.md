@@ -6,13 +6,29 @@
 [![Docs.rs](https://docs.rs/gcj-helper/badge.svg)][4]
 
 `gcj-helper` is a [Rust][5] library for writing [Google Code Jam][6] solutions. It handles the
-boilerplate for you so you can focus on writing solutions instead.
+boilerplate so you can focus on writing solutions instead.
+
+## Example
+
+```rust
+extern crate gcj_helper;
+
+use gcj_helper::TestEngine;
+use std::io::Write;
+
+fn main() {
+    TestEngine::new("./foo.in", "./foo.out").run(|io_helper| {
+        let line = io_helper.read_line();
+        writeln!(io_helper, " {}", line).unwrap();
+    });
+}
+```
 
 ## Usage
 
 ### Via `cargo new --template`
 
-If you're creating a new crate, the quickest way to get started is to use the following command:
+For brand-new crates, the quickest way to get started is to use the following command:
 
 ```text
 cargo new --template https://github.com/FaultyRAM/gcj-template-rust.git foobar

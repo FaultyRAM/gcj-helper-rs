@@ -12,27 +12,27 @@
 
 extern crate gcj_helper;
 
-use gcj_helper::{TestCaseIo, TestCases};
+use gcj_helper::{TestEngine, IoHelper};
 use std::io::Write;
 
-fn insomnia(tc_io: &mut TestCaseIo) {
-    writeln!(tc_io, " INSOMNIA").expect("could not write to output file");
+fn insomnia(io_helper: &mut IoHelper) {
+    writeln!(io_helper, " INSOMNIA").expect("could not write to output file");
 }
 
-fn result(tc_io: &mut TestCaseIo, number: &str) {
-    writeln!(tc_io, " {}", number).expect("could not write to output file");
+fn result(io_helper: &mut IoHelper, number: &str) {
+    writeln!(io_helper, " {}", number).expect("could not write to output file");
 }
 
 fn main() {
-    let tc = TestCases::new();
-    tc.run(|tc_io| {
+    let engine = TestEngine::from_args();
+    engine.run(|io_helper| {
         let mut digits_found = [false; 10];
         let mut digits_count = 0;
-        let mut step = tc_io.read_line();
+        let mut step = io_helper.read_line();
         let mut step_mul = 2;
         let number = u32::from_str_radix(&step, 10).expect("could not parse test case");
         if step == "0" {
-            insomnia(tc_io);
+            insomnia(io_helper);
             return;
         }
         loop {
@@ -44,7 +44,7 @@ fn main() {
                             digits_found[i] = true;
                             digits_count += 1;
                             if digits_count >= digits_found.len() {
-                                result(tc_io, &step);
+                                result(io_helper, &step);
                                 return;
                             }
                         }

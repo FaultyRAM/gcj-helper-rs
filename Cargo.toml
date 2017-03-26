@@ -2,7 +2,7 @@
 name = "gcj-helper"
 version = "0.1.0"
 authors = ["FaultyRAM <explodingpsu@gmail.com>"]
-description = "A helper library for use in the Google Code Jam."
+description = "A helper library for Google Code Jam solutions."
 repository = "https://github.com/FaultyRAM/gcj-helper-rs"
 readme = "README.md"
 keywords = ["boilerplate", "code", "jam"]

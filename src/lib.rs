@@ -5,7 +5,35 @@
 // or http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-//! A helper library for use in the Google Code Jam.
+//! A helper library for Google Code Jam solutions.
+//!
+//! In the Google Code Jam, solving a problem typically requires the following steps:
+//!
+//! 1. Open an input file containing a series of test cases.
+//! 2. Open an output file where solutions will be written.
+//! 2. Read the first line from the input file, which consists solely of an unsigned integer
+//!    specifying the number of test cases in the input file.
+//! 3. For each test case, perform the following steps:
+//!    1. Obtain the corresponding test data by reading one or more lines from the input file (it
+//!       may be a fixed number, or specified within the test data itself).
+//!    2. Perform some logic using the test data, in order to obtain a set of results.
+//!    3. Write the string `"Case #N:"` (where `N` is the number of completed test cases) followed
+//!       by the results obtained in the previous step, formatted as the problem requires.
+//!
+//! Writing code to handle all of the above is tedious and time-consuming, in a situation where
+//! every microsecond counts. `gcj-helper` is designed to handle the boilerplate, so you can focus
+//! on writing solutions instead.
+//!
+//! # Example
+//!
+//! ```rust
+//! use gcj_helper::TestEngine;
+//! use std::io::Write;
+//! TestEngine::new("./foo.in", "./foo.out").run(|io_helper| {
+//!     let line = io_helper.read_line();
+//!     writeln!(io_helper, " {}", line).unwrap(); // `"Case #N: foo\n"`
+//! });
+//! ```
 
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy))]
@@ -35,9 +63,26 @@ use std::io::{BufRead, BufReader, LineWriter, Lines, Write};
 use std::ops::{Add, AddAssign};
 use std::path::Path;
 
-/// A set of test cases loaded from an input file.
+/// Facilitates the execution of problem solving code.
+///
+/// In order to handle test cases, you need to create a new `TestEngine`, then call
+/// `TestEngine::run()`, which accepts an `Fn(&mut IoHelper)` that is called once per test case.
+/// Creating a `TestEngine` is cheap; no files are opened until you call `TestEngine::run()`.
 #[derive(Debug)]
-pub struct TestCases {
+pub struct TestEngine<I: AsRef<Path>, O: AsRef<Path>> {
+    /// A path to an input file.
+    input_file_path: I,
+    /// A path to an output file.
+    output_file_path: O,
+}
+
+/// Provides I/O support for problem solving code.
+///
+/// The `IoHelper` type allows reading from an input file and writing to an output file.
+/// `IoHelper::read_line()` reads the next line of text from the input file, and `io::Write` is
+/// implemented for `IoHelper` such that data is written to the output file.
+#[derive(Debug)]
+pub struct IoHelper {
     /// An iterator over the lines of an input file.
     input: Lines<BufReader<File>>,
     /// An output file.
@@ -48,36 +93,91 @@ pub struct TestCases {
     case_count: usize,
 }
 
-/// Supports reading lines from an input file and writing data to an output file.
-#[derive(Debug)]
-pub struct TestCaseIo(TestCases);
+impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
+    /// Creates a new test engine using the specified input and output file paths.
+    ///
+    /// Calling this method is cheap; no files are opened until `TestEngine::run()` is called.
+    pub fn new(input_file_path: I, output_file_path: O) -> TestEngine<I, O> {
+        TestEngine {
+            input_file_path: input_file_path,
+            output_file_path: output_file_path,
+        }
+    }
 
-impl TestCases {
-    /// Obtains a set of test cases.
-    pub fn new() -> TestCases {
-        let arg = env::args().nth(1).expect("input file path not specified");
-        let input_file_path = Path::new(&arg);
-        let output_file_path = input_file_path.with_extension("out");
-        assert_ne!(input_file_path, output_file_path);
-        let mut test_cases = TestCases {
-            input: Self::open_input_file(input_file_path),
-            output: Self::open_output_file(&output_file_path),
+    /// Consumes the test engine, calling a closure once for each test case.
+    pub fn run<F: Fn(&mut IoHelper)>(self, f: F) {
+        let io_helper = IoHelper::new(self);
+        io_helper.run(f);
+    }
+}
+
+impl TestEngine<String, String> {
+    /// Creates a new test engine using input and output file paths obtained from command line
+    /// arguments.
+    ///
+    /// Calling this method is cheap; no files are opened until `TestEngine::run()` is called.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if either the input file path or output file path is missing.
+    pub fn from_args() -> TestEngine<String, String> {
+        let mut args = env::args();
+        let input_file_path = args.nth(1).expect("input file path not specified");
+        let output_file_path = args.next().expect("output file path not specified");
+        Self::new(input_file_path, output_file_path)
+    }
+}
+
+impl Default for TestEngine<String, String> {
+    fn default() -> TestEngine<String, String> {
+        Self::from_args()
+    }
+}
+
+impl IoHelper {
+    /// Reads a line of text from the input file.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if reading fails for any reason, such as having reached the end of the
+    /// input file.
+    pub fn read_line(&mut self) -> String {
+        self.input
+            .next()
+            .expect("reached end of file")
+            .expect("could not read from input file")
+    }
+
+    /// Returns the current test case number.
+    pub fn current_case(&self) -> usize {
+        self.current_case
+    }
+
+    /// Returns the total number of test cases in the input file.
+    pub fn case_count(&self) -> usize {
+        self.case_count
+    }
+
+    /// Creates a new I/O helper.
+    fn new<I: AsRef<Path>, O: AsRef<Path>>(test_engine: TestEngine<I, O>) -> IoHelper {
+        let mut io_helper = IoHelper {
+            input: Self::open_input_file(test_engine.input_file_path),
+            output: Self::open_output_file(test_engine.output_file_path),
             current_case: 1,
             case_count: 0,
         };
-        test_cases.init_test_case_count();
-        test_cases
+        io_helper.init_test_case_count();
+        io_helper
     }
 
-    /// Consumes a set of test cases, calling a closure once for each test case.
-    pub fn run<F: Fn(&mut TestCaseIo)>(self, f: F) {
-        let mut tc_io = TestCaseIo::new(self);
-        while tc_io.0.current_case <= tc_io.0.case_count {
-            let current_case_s = tc_io.0.current_case_string();
-            let _ = tc_io.write(current_case_s.as_bytes())
+    /// Consumes the I/O helper, calling a closure once for each test case.
+    fn run<F: Fn(&mut IoHelper)>(mut self, f: F) {
+        while self.current_case <= self.case_count {
+            let current_case_s = self.current_case_string();
+            let _ = self.write(current_case_s.as_bytes())
                 .expect("could not write current test case string to output file");
-            (f)(&mut tc_io);
-            tc_io.0.current_case.add_assign(1);
+            (f)(&mut self);
+            self.current_case.add_assign(1);
         }
     }
 
@@ -97,14 +197,6 @@ impl TestCases {
                             .create(true)
                             .open(path)
                             .expect("could not open output file for writing"))
-    }
-
-    /// Reads a line of text from the input file.
-    fn read_line(&mut self) -> String {
-        self.input
-            .next()
-            .expect("reached end of file")
-            .expect("could not read from input file")
     }
 
     /// Obtains the number of test cases to examine from the input file.
@@ -128,48 +220,20 @@ impl TestCases {
     }
 }
 
-impl Default for TestCases {
-    fn default() -> TestCases {
-        Self::new()
-    }
-}
-
-impl TestCaseIo {
-    /// Reads a line from the input file.
-    pub fn read_line(&mut self) -> String {
-        self.0.read_line()
-    }
-
-    /// Returns the current test case number.
-    pub fn current_case(&self) -> usize {
-        self.0.current_case
-    }
-
-    /// Returns the total number of test cases in the input file.
-    pub fn case_count(&self) -> usize {
-        self.0.case_count
-    }
-
-    /// Creates a new `TestCaseIo` instance.
-    fn new(test_cases: TestCases) -> TestCaseIo {
-        TestCaseIo(test_cases)
-    }
-}
-
-impl Write for TestCaseIo {
+impl Write for IoHelper {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.output.write(buf)
+        self.output.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.0.output.flush()
+        self.output.flush()
     }
 
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.0.output.write_all(buf)
+        self.output.write_all(buf)
     }
 
     fn write_fmt(&mut self, fmt: Arguments) -> io::Result<()> {
-        self.0.output.write_fmt(fmt)
+        self.output.write_fmt(fmt)
     }
 }

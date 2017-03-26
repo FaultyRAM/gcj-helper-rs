@@ -1,7 +1,7 @@
 # gcj-helper
 
-[![Travis](https://img.shields.io/travis/FaultyRAM/gcj-helper.svg)][1]
-[![AppVeyor](https://img.shields.io/appveyor/ci/FaultyRAM/gcj-helper.svg)][2]
+[![Travis](https://img.shields.io/travis/FaultyRAM/gcj-helper-rs.svg)][1]
+[![AppVeyor](https://img.shields.io/appveyor/ci/FaultyRAM/gcj-helper-rs.svg)][2]
 [![Crates.io](https://img.shields.io/crates/v/gcj-helper.svg)][3]
 [![Docs.rs](https://docs.rs/gcj-helper/badge.svg)][4]
 
@@ -53,8 +53,8 @@ submitted for inclusion in the work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.
 
-[1]: https://travis-ci.org/FaultyRAM/gcj-helper
-[2]: https://ci.appveyor.com/project/FaultyRAM/gcj-helper
+[1]: https://travis-ci.org/FaultyRAM/gcj-helper-rs
+[2]: https://ci.appveyor.com/project/FaultyRAM/gcj-helper-rs
 [3]: https://crates.io/crates/gcj-helper
 [4]: https://docs.rs/gcj-helper
 [5]: https://www.rust-lang.org

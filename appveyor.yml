@@ -3,40 +3,71 @@ matrix:
     - CHANNEL: nightly
 environment:
   matrix:
-    - TARGET: i586-pc-windows-msvc
+    - ARCH: i586
+      ABI: msvc
       CHANNEL: stable
-    - TARGET: i586-pc-windows-msvc
+      EXTRA_ARGS:
+    - ARCH: i586
+      ABI: msvc
       CHANNEL: beta
-    - TARGET: i586-pc-windows-msvc
+      EXTRA_ARGS:
+    - ARCH: i586
+      ABI: msvc
       CHANNEL: nightly
-    - TARGET: i686-pc-windows-gnu
+      EXTRA_ARGS: --features clippy
+    - ARCH: i686
+      ABI: gnu
       CHANNEL: stable
-    - TARGET: i686-pc-windows-gnu
+      EXTRA_ARGS:
+    - ARCH: i686
+      ABI: gnu
       CHANNEL: beta
-    - TARGET: i686-pc-windows-gnu
+      EXTRA_ARGS:
+    - ARCH: i686
+      ABI: gnu
       CHANNEL: nightly
-    - TARGET: i686-pc-windows-msvc
+      EXTRA_ARGS: --features clippy
+    - ARCH: i686
+      ABI: msvc
       CHANNEL: stable
-    - TARGET: i686-pc-windows-msvc
+      EXTRA_ARGS:
+    - ARCH: i686
+      ABI: msvc
       CHANNEL: beta
-    - TARGET: i686-pc-windows-msvc
+      EXTRA_ARGS:
+    - ARCH: i686
+      ABI: msvc
       CHANNEL: nightly
-    - TARGET: x86_64-pc-windows-gnu
+      EXTRA_ARGS: --features clippy
+    - ARCH: x86_64
+      ABI: gnu
       CHANNEL: stable
-    - TARGET: x86_64-pc-windows-gnu
+      EXTRA_ARGS:
+    - ARCH: x86_64
+      ABI: gnu
       CHANNEL: beta
-    - TARGET: x86_64-pc-windows-gnu
+      EXTRA_ARGS:
+    - ARCH: x86_64
+      ABI: gnu
       CHANNEL: nightly
-    - TARGET: x86_64-pc-windows-msvc
+      EXTRA_ARGS: --features clippy
+    - ARCH: x86_64
+      ABI: msvc
       CHANNEL: stable
-    - TARGET: x86_64-pc-windows-msvc
+      EXTRA_ARGS:
+    - ARCH: x86_64
+      ABI: msvc
       CHANNEL: beta
-    - TARGET: x86_64-pc-windows-msvc
+      EXTRA_ARGS:
+    - ARCH: x86_64
+      ABI: msvc
       CHANNEL: nightly
+      EXTRA_ARGS: --features clippy
 install:
   - SET PATH=%PATH%;%USERPROFILE%\.cargo\bin;C:\MinGW\bin
+  - SET TARGET=%ARCH%-pc-windows-%ABI%
   - ps: Start-FileDownload "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe"
-  - IF "%TARGET%"=="i586-pc-windows-msvc" (
+  - IF "%ARCH%"=="i586" (
       rustup-init.exe -y --no-modify-path --default-host i686-pc-windows-msvc --default-toolchain %CHANNEL% &&
       rustup target add %TARGET%
     ) ELSE (
@@ -47,18 +78,8 @@ install:
   - rustdoc --version
   - cargo --version
 build_script:
-  - IF "%CHANNEL%" == "nightly" (
-      cargo build --verbose --target=%TARGET% --features clippy &&
-      cargo build --example gcj-2016-qualifier-a --verbose --target=%TARGET% --features clippy &&
-      cargo doc --verbose --target=%TARGET% --features clippy
-    ) ELSE (
-      cargo build --verbose --target=%TARGET% &&
-      cargo build --example gcj-2016-qualifier-a --verbose --target=%TARGET% &&
-      cargo doc --verbose --target=%TARGET%
-    )
+  - cargo build --verbose --target=%TARGET% %EXTRA_ARGS% &&
+    cargo build --example gcj-2016-qualifier-a --verbose --target=%TARGET% %EXTRA_ARGS% &&
+    cargo doc --verbose --target=%TARGET% %EXTRA_ARGS%
 test_script:
-  - IF "%CHANNEL%" == "nightly" (
-      cargo test --verbose --target=%TARGET% --features clippy
-    ) ELSE (
-      cargo test --target=%TARGET% --verbose
-    )
+  - cargo test --verbose --target=%TARGET% %EXTRA_ARGS%

@@ -49,9 +49,11 @@ install:
 build_script:
   - IF "%CHANNEL%" == "nightly" (
       cargo build --verbose --target=%TARGET% --features clippy &&
+      cargo build --example gcj-2016-qualifier-a --verbose --target=%TARGET% --features clippy &&
       cargo doc --verbose --target=%TARGET% --features clippy
     ) ELSE (
       cargo build --verbose --target=%TARGET% &&
+      cargo build --example gcj-2016-qualifier-a --verbose --target=%TARGET% &&
       cargo doc --verbose --target=%TARGET%
     )
 test_script:

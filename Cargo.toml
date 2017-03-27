@@ -1,6 +1,6 @@
 [package]
 name = "gcj-helper"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["FaultyRAM <explodingpsu@gmail.com>"]
 description = "A helper library for Google Code Jam solutions."
 repository = "https://github.com/FaultyRAM/gcj-helper-rs"

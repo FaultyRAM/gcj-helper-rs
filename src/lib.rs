@@ -46,6 +46,7 @@
 #![forbid(variant_size_differences)]
 
 use std::{env, io};
+use std::ffi::OsString;
 use std::fmt::Arguments;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, LineWriter, Lines, Write};
@@ -100,7 +101,7 @@ impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
     }
 }
 
-impl TestEngine<String, String> {
+impl TestEngine<OsString, OsString> {
     /// Creates a new test engine using input and output file paths obtained from command line
     /// arguments.
     ///
@@ -109,16 +110,16 @@ impl TestEngine<String, String> {
     /// # Panics
     ///
     /// This method panics if either the input file path or output file path is missing.
-    pub fn from_args() -> TestEngine<String, String> {
-        let mut args = env::args();
+    pub fn from_args() -> TestEngine<OsString, OsString> {
+        let mut args = env::args_os();
         let input_file_path = args.nth(1).expect("input file path not specified");
         let output_file_path = args.next().expect("output file path not specified");
         Self::new(input_file_path, output_file_path)
     }
 }
 
-impl Default for TestEngine<String, String> {
-    fn default() -> TestEngine<String, String> {
+impl Default for TestEngine<OsString, OsString> {
+    fn default() -> TestEngine<OsString, OsString> {
         Self::from_args()
     }
 }

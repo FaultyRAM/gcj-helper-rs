@@ -43,7 +43,7 @@ You can also manually add `gcj-helper` to your crate, though doing so is slower 
 `cargo new --template`. To do this, add the following line to your `[dependencies]` in `Cargo.toml`:
 
 ```toml
-gcj-helper = "0.1"
+gcj-helper = "0.2"
 ```
 
 And add the following line to your crate root:

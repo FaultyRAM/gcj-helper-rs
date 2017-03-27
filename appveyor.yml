@@ -68,7 +68,7 @@ install:
   - SET TARGET=%ARCH%-pc-windows-%ABI%
   - ps: Start-FileDownload "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe"
   - IF "%ARCH%"=="i586" (
-      rustup-init.exe -y --no-modify-path --default-host i686-pc-windows-msvc --default-toolchain %CHANNEL% &&
+      rustup-init.exe -y --no-modify-path --default-host i686-pc-windows-%ABI% --default-toolchain %CHANNEL% &&
       rustup target add %TARGET%
     ) ELSE (
       rustup-init.exe -y --no-modify-path --default-host %TARGET% --default-toolchain %CHANNEL%
@@ -78,8 +78,8 @@ install:
   - rustdoc --version
   - cargo --version
 build_script:
-  - cargo build --verbose --target=%TARGET% %EXTRA_ARGS% &&
-    cargo build --example gcj-2016-qualifier-a --verbose --target=%TARGET% %EXTRA_ARGS% &&
-    cargo doc --verbose --target=%TARGET% %EXTRA_ARGS%
+  - cargo build -vv --target=%TARGET% %EXTRA_ARGS%
+  - cargo build -vv --target=%TARGET% %EXTRA_ARGS% --example gcj-2016-qualifier-a
+  - cargo doc -vv --target=%TARGET% %EXTRA_ARGS%
 test_script:
-  - cargo test --verbose --target=%TARGET% %EXTRA_ARGS%
+  - cargo test -vv --target=%TARGET% %EXTRA_ARGS%

@@ -7,10 +7,10 @@ rust:
   - beta
   - nightly
 script:
-  - cargo build --verbose
-  - cargo build --example gcj-2016-qualifier-a --verbose
-  - cargo test --verbose
-  - cargo doc --verbose
+  - cargo build -vv
+  - cargo build -vv --example gcj-2016-qualifier-a
+  - cargo test -vv
+  - cargo doc -vv
 matrix:
   allow_failures:
     - rust:

@@ -24,8 +24,7 @@ fn result(io_helper: &mut IoHelper, number: &str) {
 }
 
 fn main() {
-    let engine = TestEngine::from_args();
-    engine.run(|io_helper| {
+    TestEngine::from_args().run(|io_helper| {
         let mut digits_found = [false; 10];
         let mut digits_count = 0;
         let mut step = io_helper.read_line();

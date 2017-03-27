@@ -61,8 +61,8 @@ With this line:
 gcj-helper = { version = "0.3", features = ["parallel"] }
 ```
 
-And in `src/main.rs`, replace the call to `TestEngine::new()` with a call to
-`TestEngine::new_parallel()` as shown above.
+And in `src/main.rs`, replace the call to `TestEngine::run()` with a call to
+`TestEngine::run_parallel()` as shown above.
 
 ### By hand
 

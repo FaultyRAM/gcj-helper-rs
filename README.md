@@ -8,7 +8,9 @@
 `gcj-helper` is a [Rust][5] library for writing [Google Code Jam][6] solutions. It handles the
 boilerplate so you can focus on writing solutions instead.
 
-## Example
+## Examples
+
+### Sequential computation
 
 ```rust
 extern crate gcj_helper;
@@ -23,29 +25,61 @@ fn main() {
 }
 ```
 
+### Parallel computation
+
+```rust
+extern crate gcj_helper;
+
+use gcj_helper::TestEngine;
+
+fn main() {
+    TestEngine::new("./foo.in", "./foo.out")
+        .run_parallel(|input| input.read_next_line(), |data| format!(" {}\n", data));
+}
+```
+
 ## Usage
 
 ### Via `cargo new --template`
 
-For brand-new crates, the quickest way to get started is to use the following command:
+For brand-new crates, the quickest way to get started is to use a Cargo template:
 
 ```text
 cargo new --template https://github.com/FaultyRAM/gcj-template-rust.git foobar
 ```
 
-This creates a new binary crate named `foobar` that is set up to use `gcj-helper`. No additional
-work is needed; just open `src/main.rs` and start writing your solution.
-
-### By hand
-
-You can also manually add `gcj-helper` to your crate, though doing so is slower than using
-`cargo new --template`. To do this, add the following line to your `[dependencies]` in `Cargo.toml`:
+This creates a new crate named `foobar` that uses `gcj-helper`'s sequential API. If you want to use
+the parallel API instead, in `Cargo.toml` replace this line:
 
 ```toml
 gcj-helper = "0.3"
 ```
 
-And add the following line to your crate root:
+With this line:
+
+```toml
+gcj-helper = { version = "0.3", features = ["parallel"] }
+```
+
+And in `src/main.rs`, replace the call to `TestEngine::new()` with a call to
+`TestEngine::new_parallel()` as shown above.
+
+### By hand
+
+You can also manually add `gcj-helper` to your crate, though doing so is slower than using
+`cargo new --template`. To do this, either add this to your `[dependencies]` in `Cargo.toml`:
+
+```toml
+gcj-helper = "0.3"
+```
+
+Or if you want to use the parallel API, add this instead:
+
+```toml
+gcj-helper = { version = "0.3", features = ["parallel"] }
+```
+
+After adding `gcj-helper` to `Cargo.toml`, add this to your crate root:
 
 ```rust
 extern crate gcj_helper;

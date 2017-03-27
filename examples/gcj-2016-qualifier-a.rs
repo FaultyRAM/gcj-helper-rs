@@ -13,38 +13,46 @@
 extern crate gcj_helper;
 
 use gcj_helper::TestEngine;
-use std::io::Write;
 
+#[cfg(not(feature = "parallel"))]
 fn main() {
+    use std::io::Write;
     TestEngine::from_args().run(|input, output| {
-        let mut digits_found = [false; 10];
-        let mut digits_count = 0;
-        let mut step = input.read_next_line();
-        let mut step_mul = 2;
-        let number = u32::from_str_radix(&step, 10).unwrap();
-        if step == "0" {
-            writeln!(output, " INSOMNIA").unwrap();
-            return;
-        }
-        loop {
-            for digit in step.bytes() {
-                match digit {
-                    0x30...0x39 => {
-                        let i = (digit - 0x30) as usize;
-                        if !digits_found[i] {
-                            digits_found[i] = true;
-                            digits_count += 1;
-                            if digits_count >= digits_found.len() {
-                                writeln!(output, " {}", step).unwrap();
-                                return;
-                            }
+                                    writeln!(output, " {}", solve(input.read_next_line())).unwrap();
+                                });
+}
+
+#[cfg(feature = "parallel")]
+fn main() {
+    TestEngine::from_args().run_parallel(|input| input.read_next_line(),
+                                         |data| format!(" {}\n", solve(data.clone())))
+}
+
+fn solve(mut step: String) -> String {
+    if step == "0" {
+        return "INSOMNIA".to_string();
+    }
+    let mut digits_found = [false; 10];
+    let mut digits_count = 0;
+    let mut step_mul = 2;
+    let number = u32::from_str_radix(&step, 10).unwrap();
+    loop {
+        for digit in step.bytes() {
+            match digit {
+                0x30...0x39 => {
+                    let i = (digit - 0x30) as usize;
+                    if !digits_found[i] {
+                        digits_found[i] = true;
+                        digits_count += 1;
+                        if digits_count >= digits_found.len() {
+                            return step.to_string();
                         }
                     }
-                    _ => unreachable!(),
                 }
+                _ => unreachable!(),
             }
-            step = (number * step_mul).to_string();
-            step_mul += 1;
         }
-    });
+        step = (number * step_mul).to_string();
+        step_mul += 1;
+    }
 }

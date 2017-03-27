@@ -17,9 +17,8 @@ use gcj_helper::TestEngine;
 use std::io::Write;
 
 fn main() {
-    TestEngine::new("./foo.in", "./foo.out").run(|io_helper| {
-        let line = io_helper.read_line();
-        writeln!(io_helper, " {}", line).unwrap();
+    TestEngine::new("./foo.in", "./foo.out").run(|input, output| {
+        writeln!(output, " {}", input.read_next_line())
     });
 }
 ```
@@ -43,7 +42,7 @@ You can also manually add `gcj-helper` to your crate, though doing so is slower 
 `cargo new --template`. To do this, add the following line to your `[dependencies]` in `Cargo.toml`:
 
 ```toml
-gcj-helper = "0.2"
+gcj-helper = "0.3"
 ```
 
 And add the following line to your crate root:

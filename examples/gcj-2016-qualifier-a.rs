@@ -12,26 +12,18 @@
 
 extern crate gcj_helper;
 
-use gcj_helper::{TestEngine, IoHelper};
+use gcj_helper::TestEngine;
 use std::io::Write;
 
-fn insomnia(io_helper: &mut IoHelper) {
-    writeln!(io_helper, " INSOMNIA").expect("could not write to output file");
-}
-
-fn result(io_helper: &mut IoHelper, number: &str) {
-    writeln!(io_helper, " {}", number).expect("could not write to output file");
-}
-
 fn main() {
-    TestEngine::from_args().run(|io_helper| {
+    TestEngine::from_args().run(|input, output| {
         let mut digits_found = [false; 10];
         let mut digits_count = 0;
-        let mut step = io_helper.read_line();
+        let mut step = input.read_next_line();
         let mut step_mul = 2;
-        let number = u32::from_str_radix(&step, 10).expect("could not parse test case");
+        let number = u32::from_str_radix(&step, 10).unwrap();
         if step == "0" {
-            insomnia(io_helper);
+            writeln!(output, " INSOMNIA").unwrap();
             return;
         }
         loop {
@@ -43,7 +35,7 @@ fn main() {
                             digits_found[i] = true;
                             digits_count += 1;
                             if digits_count >= digits_found.len() {
-                                result(io_helper, &step);
+                                writeln!(output, " {}", step).unwrap();
                                 return;
                             }
                         }

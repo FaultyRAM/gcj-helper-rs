@@ -49,15 +49,16 @@ use std::{env, io};
 use std::ffi::OsString;
 use std::fmt::Arguments;
 use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, LineWriter, Lines, Write};
-use std::ops::{Add, AddAssign};
+use std::io::{BufRead, BufReader, LineWriter, Read, Write};
+use std::ops::AddAssign;
 use std::path::Path;
 
 /// Facilitates the execution of problem solving code.
 ///
 /// In order to handle test cases, you need to create a new `TestEngine`, then call
-/// `TestEngine::run()`, which accepts an `Fn(&mut IoHelper)` that is called once per test case.
-/// Creating a `TestEngine` is cheap; no files are opened until you call `TestEngine::run()`.
+/// `TestEngine::run()`, which accepts an `Fn(&mut InputReader, &mut OutputWriter)` that is called
+/// once per test case. Creating a `TestEngine` is cheap; no files are opened until you call
+/// `TestEngine::run()`.
 #[derive(Debug)]
 pub struct TestEngine<I: AsRef<Path>, O: AsRef<Path>> {
     /// A path to an input file.
@@ -66,22 +67,13 @@ pub struct TestEngine<I: AsRef<Path>, O: AsRef<Path>> {
     output_file_path: O,
 }
 
-/// Provides I/O support for problem solving code.
-///
-/// The `IoHelper` type allows reading from an input file and writing to an output file.
-/// `IoHelper::read_line()` reads the next line of text from the input file, and `io::Write` is
-/// implemented for `IoHelper` such that data is written to the output file.
+/// Supports reading from an input file.
 #[derive(Debug)]
-pub struct IoHelper {
-    /// An iterator over the lines of an input file.
-    input: Lines<BufReader<File>>,
-    /// An output file.
-    output: LineWriter<File>,
-    /// The current test case.
-    current_case: usize,
-    /// The total number of test cases to handle.
-    case_count: usize,
-}
+pub struct InputReader(BufReader<File>);
+
+/// Supports writing to an output file.
+#[derive(Debug)]
+pub struct OutputWriter(LineWriter<File>);
 
 impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
     /// Creates a new test engine using the specified input and output file paths.
@@ -95,9 +87,16 @@ impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
     }
 
     /// Consumes the test engine, calling a closure once for each test case.
-    pub fn run<F: Fn(&mut IoHelper)>(self, f: F) {
-        let io_helper = IoHelper::new(self);
-        io_helper.run(f);
+    pub fn run<F: Fn(&mut InputReader, &mut OutputWriter)>(self, f: F) {
+        let mut reader = InputReader::new(self.input_file_path);
+        let mut writer = OutputWriter::new(self.output_file_path);
+        let mut current_case: usize = 1;
+        let case_count = reader.get_case_count();
+        while current_case <= case_count {
+            writer.write_case_number(current_case);
+            (f)(&mut reader, &mut writer);
+            current_case.add_assign(1);
+        }
     }
 }
 
@@ -124,106 +123,104 @@ impl Default for TestEngine<OsString, OsString> {
     }
 }
 
-impl IoHelper {
+impl InputReader {
     /// Reads a line of text from the input file.
     ///
-    /// # Panics
-    ///
-    /// This method panics if reading fails for any reason, such as having reached the end of the
-    /// input file.
-    pub fn read_line(&mut self) -> String {
-        self.input
+    /// The returned string does not contain a newline.
+    pub fn read_next_line(&mut self) -> String {
+        let mut line = String::with_capacity(0);
+        let _ = self.read_line(&mut line).expect("could not read from input file");
+        let line_len = line.lines()
             .next()
-            .expect("reached end of file")
-            .expect("could not read from input file")
+            .map(|l| l.len())
+            .expect("could not obtain line length");
+        line.truncate(line_len);
+        line
     }
 
-    /// Returns the current test case number.
-    pub fn current_case(&self) -> usize {
-        self.current_case
-    }
-
-    /// Returns the total number of test cases in the input file.
-    pub fn case_count(&self) -> usize {
-        self.case_count
-    }
-
-    /// Creates a new I/O helper.
-    fn new<I: AsRef<Path>, O: AsRef<Path>>(test_engine: TestEngine<I, O>) -> IoHelper {
-        let mut io_helper = IoHelper {
-            input: Self::open_input_file(test_engine.input_file_path),
-            output: Self::open_output_file(test_engine.output_file_path),
-            current_case: 1,
-            case_count: 0,
-        };
-        io_helper.init_test_case_count();
-        io_helper
-    }
-
-    /// Consumes the I/O helper, calling a closure once for each test case.
-    fn run<F: Fn(&mut IoHelper)>(mut self, f: F) {
-        while self.current_case <= self.case_count {
-            let current_case_s = self.current_case_string();
-            let _ = self.write(current_case_s.as_bytes())
-                .expect("could not write current test case string to output file");
-            (f)(&mut self);
-            self.current_case.add_assign(1);
-        }
-    }
-
-    /// Creates an iterator over the lines of an input file.
-    fn open_input_file<P: AsRef<Path>>(path: P) -> Lines<BufReader<File>> {
-        BufReader::new(OpenOptions::new()
+    /// Creates a new input reader over the given input file.
+    fn new<P: AsRef<Path>>(path: P) -> InputReader {
+        InputReader(BufReader::new(OpenOptions::new()
             .read(true)
             .open(path)
-            .expect("could not open input file for reading")).lines()
+            .expect("could not open input file for reading")))
     }
 
-    /// Creates an output file.
-    fn open_output_file<P: AsRef<Path>>(path: P) -> LineWriter<File> {
-        LineWriter::new(OpenOptions::new()
-                            .write(true)
-                            .truncate(true)
-                            .create(true)
-                            .open(path)
-                            .expect("could not open output file for writing"))
-    }
-
-    /// Obtains the number of test cases to examine from the input file.
-    fn init_test_case_count(&mut self) {
-        let line = self.read_line();
-        self.case_count =
-            usize::from_str_radix(&line, 10).expect("could not parse test case count");
-    }
-
-    /// Creates a string identifying the current test case.
-    fn current_case_string(&mut self) -> String {
-        let case_str = "Case #";
-        let case_s = self.current_case.to_string();
-        let case_str_colon = ":";
-        let mut out = String::with_capacity(0);
-        out.reserve_exact(case_str.len().add(case_s.len()).add(case_str_colon.len()));
-        out.push_str(case_str);
-        out.push_str(&case_s);
-        out.push_str(case_str_colon);
-        out
+    /// Reads the number of test cases from the input file.
+    fn get_case_count(&mut self) -> usize {
+        usize::from_str_radix(&self.read_next_line(), 10).expect("could not parse test case count")
     }
 }
 
-impl Write for IoHelper {
+impl Read for InputReader {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.0.read(buf)
+    }
+
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
+        self.0.read_to_end(buf)
+    }
+
+    fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
+        self.0.read_to_string(buf)
+    }
+
+    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        self.0.read_exact(buf)
+    }
+}
+
+impl BufRead for InputReader {
+    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        self.0.fill_buf()
+    }
+
+    fn consume(&mut self, amt: usize) {
+        self.0.consume(amt)
+    }
+
+    fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> io::Result<usize> {
+        self.0.read_until(byte, buf)
+    }
+
+    fn read_line(&mut self, buf: &mut String) -> io::Result<usize> {
+        self.0.read_line(buf)
+    }
+}
+
+impl OutputWriter {
+    /// Creates a new output writer over the given output file.
+    fn new<P: AsRef<Path>>(path: P) -> OutputWriter {
+        OutputWriter(LineWriter::new(OpenOptions::new()
+                                         .write(true)
+                                         .truncate(true)
+                                         .create(true)
+                                         .open(path)
+                                         .expect("could not open output file for writing")))
+    }
+
+    /// Writes the string "Case #N:" (where `N` is the given case number) to the output file.
+    fn write_case_number(&mut self, case: usize) {
+        self.write_all(b"Case #").expect("could not write case number to output file");
+        self.write_all(case.to_string().as_bytes()).expect("could not write case number to output file");
+        self.write_all(b":").expect("could not write case number to output file");
+    }
+}
+
+impl Write for OutputWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.output.write(buf)
+        self.0.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.output.flush()
+        self.0.flush()
     }
 
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.output.write_all(buf)
+        self.0.write_all(buf)
     }
 
     fn write_fmt(&mut self, fmt: Arguments) -> io::Result<()> {
-        self.output.write_fmt(fmt)
+        self.0.write_fmt(fmt)
     }
 }

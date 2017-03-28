@@ -107,12 +107,16 @@ impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
     ///
     /// This method panics in the event of an I/O error.
     #[cfg(feature = "parallel")]
-    pub fn run_parallel<D: Sized + Send + Sync,
-                        P: Fn(&mut InputReader) -> D,
-                        S: Fn(&D) -> String + Sync>
-        (self,
-         p: P,
-         s: S) {
+    pub fn run_parallel<
+        D: Sized + Send + Sync,
+        P: Fn(&mut InputReader) -> D,
+        S: Fn(&D) -> String + Sync
+    >
+        (
+        self,
+        p: P,
+        s: S,
+    ) {
         let mut reader = InputReader::new(self.input_file_path);
         let mut writer = OutputWriter::new(self.output_file_path);
         let case_count = reader.get_case_count();
@@ -157,7 +161,8 @@ impl InputReader {
     /// present.
     pub fn read_next_line(&mut self) -> String {
         let mut line = String::with_capacity(0);
-        let _ = self.read_line(&mut line).expect("could not read from input file");
+        let _ = self.read_line(&mut line)
+            .expect("could not read from input file");
         let line_len = line.lines()
             .next()
             .map(|l| l.len())
@@ -168,10 +173,14 @@ impl InputReader {
 
     /// Creates a new input reader over the given input file.
     fn new<P: AsRef<Path>>(path: P) -> InputReader {
-        InputReader(BufReader::new(OpenOptions::new()
-            .read(true)
-            .open(path)
-            .expect("could not open input file for reading")))
+        InputReader(
+            BufReader::new(
+                OpenOptions::new()
+                    .read(true)
+                    .open(path)
+                    .expect("could not open input file for reading"),
+            ),
+        )
     }
 
     /// Reads the number of test cases from the input file.
@@ -219,20 +228,26 @@ impl BufRead for InputReader {
 impl OutputWriter {
     /// Creates a new output writer over the given output file.
     fn new<P: AsRef<Path>>(path: P) -> OutputWriter {
-        OutputWriter(LineWriter::new(OpenOptions::new()
-                                         .write(true)
-                                         .truncate(true)
-                                         .create(true)
-                                         .open(path)
-                                         .expect("could not open output file for writing")))
+        OutputWriter(
+            LineWriter::new(
+                OpenOptions::new()
+                    .write(true)
+                    .truncate(true)
+                    .create(true)
+                    .open(path)
+                    .expect("could not open output file for writing"),
+            ),
+        )
     }
 
     /// Writes the string "Case #N:" (where `N` is the given case number) to the output file.
     fn write_case_number(&mut self, case: usize) {
-        self.write_all(b"Case #").expect("could not write case number to output file");
+        self.write_all(b"Case #")
+            .expect("could not write case number to output file");
         self.write_all(case.to_string().as_bytes())
             .expect("could not write case number to output file");
-        self.write_all(b":").expect("could not write case number to output file");
+        self.write_all(b":")
+            .expect("could not write case number to output file");
     }
 }
 

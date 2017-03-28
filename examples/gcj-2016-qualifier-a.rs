@@ -17,15 +17,19 @@ use gcj_helper::TestEngine;
 #[cfg(not(feature = "parallel"))]
 fn main() {
     use std::io::Write;
-    TestEngine::from_args().run(|input, output| {
-                                    writeln!(output, " {}", solve(input.read_next_line())).unwrap();
-                                });
+    TestEngine::from_args().run(
+        |input, output| {
+            writeln!(output, " {}", solve(input.read_next_line())).unwrap();
+        },
+    );
 }
 
 #[cfg(feature = "parallel")]
 fn main() {
-    TestEngine::from_args().run_parallel(|input| input.read_next_line(),
-                                         |data| format!(" {}\n", solve(data.clone())))
+    TestEngine::from_args().run_parallel(
+        |input| input.read_next_line(),
+        |data| format!(" {}\n", solve(data.clone())),
+    )
 }
 
 fn solve(mut step: String) -> String {

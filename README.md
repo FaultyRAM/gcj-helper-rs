@@ -19,9 +19,11 @@ use gcj_helper::TestEngine;
 use std::io::Write;
 
 fn main() {
-    TestEngine::new("./foo.in", "./foo.out").run(|input, output| {
-        writeln!(output, " {}", input.read_next_line())
-    });
+    TestEngine::new("./foo.in", "./foo.out").run(
+        |input, output| {
+            writeln!(output, " {}", input.read_next_line())
+        },
+    );
 }
 ```
 
@@ -33,8 +35,10 @@ extern crate gcj_helper;
 use gcj_helper::TestEngine;
 
 fn main() {
-    TestEngine::new("./foo.in", "./foo.out")
-        .run_parallel(|input| input.read_next_line(), |data| format!(" {}\n", data));
+    TestEngine::new("./foo.in", "./foo.out").run_parallel(
+        |input| input.read_next_line(),
+        |data| format!(" {}\n", data),
+    );
 }
 ```
 

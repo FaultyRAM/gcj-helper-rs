@@ -8,9 +8,13 @@ rust:
   - nightly
 script:
   - cargo build -vv
+  - cargo build -vv --features "parallel"
   - cargo build -vv --example gcj-2016-qualifier-a
+  - cargo build -vv --example gcj-2016-qualifier-a --features "parallel"
   - cargo test -vv
+  - cargo test -vv --features "parallel"
   - cargo doc -vv
+  - cargo doc -vv --features "parallel"
 matrix:
   allow_failures:
     - rust:

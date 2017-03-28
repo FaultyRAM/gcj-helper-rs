@@ -6,36 +6,18 @@
 [![Docs.rs](https://docs.rs/gcj-helper/badge.svg)][4]
 
 `gcj-helper` is a [Rust][5] library for writing [Google Code Jam][6] solutions. It handles the
-boilerplate so you can focus on writing solutions instead.
+usual boilerplate (opening files, reading/writing data, etc.), and optionally supports test case
+parallelisation.
 
-## Examples
-
-### Sequential computation
+## Example
 
 ```rust
 extern crate gcj_helper;
 
 use gcj_helper::TestEngine;
-use std::io::Write;
 
 fn main() {
     TestEngine::new("./foo.in", "./foo.out").run(
-        |input, output| {
-            writeln!(output, " {}", input.read_next_line())
-        },
-    );
-}
-```
-
-### Parallel computation
-
-```rust
-extern crate gcj_helper;
-
-use gcj_helper::TestEngine;
-
-fn main() {
-    TestEngine::new("./foo.in", "./foo.out").run_parallel(
         |input| input.read_next_line(),
         |data| format!(" {}\n", data),
     );
@@ -52,41 +34,39 @@ For brand-new crates, the quickest way to get started is to use a Cargo template
 cargo new --template https://github.com/FaultyRAM/gcj-template-rust.git foobar
 ```
 
-This creates a new crate named `foobar` that uses `gcj-helper`'s sequential API. If you want to use
-the parallel API instead, in `Cargo.toml` replace this line:
+This creates a new crate named `foobar` that is set up to use `gcj-helper`. No extra work is
+needed; just open `src/main.rs` and start writing your solution.
+
+### By hand
+
+You can also manually add `gcj-helper` to your crate, though doing so is slower than using
+`cargo new --template`. To do so, add this line to your `[dependencies]` in `Cargo.toml`:
 
 ```toml
-gcj-helper = "0.3"
+gcj-helper = "0.4"
+```
+
+And add this line to your crate root:
+
+```rust
+extern crate gcj_helper;
+```
+
+### Test case parallelisation
+
+By default, `gcj-helper` executes each test case in a single thread, one by one. If the `parallel`
+feature is enabled, `gcj-helper` will attempt to execute multiple test cases simultaneously, but
+this relies on third-party dependencies (currently [`rayon`][7]), resulting in slower build times.
+If you'd like to enable this feature, open `Cargo.toml` and replace the following line:
+
+```toml
+gcj-helper = "0.4"
 ```
 
 With this line:
 
 ```toml
-gcj-helper = { version = "0.3", features = ["parallel"] }
-```
-
-And in `src/main.rs`, replace the call to `TestEngine::run()` with a call to
-`TestEngine::run_parallel()` as shown above.
-
-### By hand
-
-You can also manually add `gcj-helper` to your crate, though doing so is slower than using
-`cargo new --template`. To do this, either add this to your `[dependencies]` in `Cargo.toml`:
-
-```toml
-gcj-helper = "0.3"
-```
-
-Or if you want to use the parallel API, add this instead:
-
-```toml
-gcj-helper = { version = "0.3", features = ["parallel"] }
-```
-
-After adding `gcj-helper` to `Cargo.toml`, add this to your crate root:
-
-```rust
-extern crate gcj_helper;
+gcj-helper = { version = "0.4", features = ["parallel"] }
 ```
 
 ## License
@@ -112,3 +92,4 @@ conditions.
 [4]: https://docs.rs/gcj-helper
 [5]: https://www.rust-lang.org
 [6]: https://code.google.com/codejam/
+[7]: https://crates.io/crates/rayon

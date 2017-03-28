@@ -23,6 +23,35 @@
 //! Writing code to handle all of the above is tedious and time-consuming, in a situation where
 //! every microsecond counts. `gcj-helper` is designed to handle the boilerplate, so you can focus
 //! on writing solutions instead.
+//!
+//! # The `TestEngine` type
+//!
+//! To execute test cases, you need to create a `TestEngine` and call `TestEngine::run()`.
+//! `TestEngine::run()` accepts two closures:
+//!
+//! 1. A `parser` that reads from an input file and returns the data for one test case.
+//! 2. A `solver` that performs logic on the data for one test case and returns a result, encoded
+//!    as a `Display` type.
+//!
+//! This two-step process to writing solutions is useful for two reasons:
+//!
+//! * It seperates parsing from the solution itself, making your code easier to read;
+//! * It enables test case parallelisation if the `parallel` feature is enabled, improving
+//!   run-time performance at the cost of increased build times.
+//!
+//! # The `InputReader` type
+//!
+//! `gcj-helper` provides parsers with access to an `InputReader`, a simple wrapper around a
+//! `std::fs::File`. `InputReader` implements `io::BufRead` and also provides a convenience
+//! method, `read_next_line()`, which reads a line of text from an input file and truncates the
+//! end-of-line marker if one is present.
+//!
+//! # Formatting test results
+//!
+//! Before each test case, the `TestEngine` writes the string `"Case #N:"`, where `N` is the
+//! current test case. This does not prepend or append any whitespace. This means that if the
+//! colon must be followed by a space, your result should begin with one, and that the result must
+//! end with a newline.
 
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy))]
@@ -51,7 +80,7 @@ extern crate rayon;
 use rayon::prelude::*;
 use std::{env, io};
 use std::ffi::OsString;
-use std::fmt::Arguments;
+use std::fmt::{Arguments, Display};
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, LineWriter, Read, Write};
 use std::path::Path;
@@ -70,8 +99,7 @@ pub struct TestEngine<I: AsRef<Path>, O: AsRef<Path>> {
 pub struct InputReader(BufReader<File>);
 
 /// Supports writing to an output file.
-#[derive(Debug)]
-pub struct OutputWriter(LineWriter<File>);
+struct OutputWriter(LineWriter<File>);
 
 impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
     /// Creates a new test engine using the specified input and output file paths.
@@ -84,33 +112,44 @@ impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
         }
     }
 
-    /// Consumes the test engine, executing tests cases in sequence.
+    #[cfg(not(feature = "parallel"))]
+    /// Consumes the test engine, executing a parser and solver once per test case.
     ///
     /// # Panics
     ///
     /// This method panics in the event of an I/O error.
-    pub fn run<F: Fn(&mut InputReader, &mut OutputWriter)>(self, f: F) {
+    pub fn run<
+        D: Sized + Send + Sync,
+        R: Display + Sized + Send,
+        P: Fn(&mut InputReader) -> D,
+        S: Fn(&D) -> R + Sync
+    >
+        (
+        self,
+        p: P,
+        s: S,
+    ) {
         let mut reader = InputReader::new(self.input_file_path);
         let mut writer = OutputWriter::new(self.output_file_path);
         let mut current_case: usize = 1;
         let case_count = reader.get_case_count();
         while current_case <= case_count {
-            writer.write_case_number(current_case);
-            (f)(&mut reader, &mut writer);
+            writer.write_test_result(current_case, (s)(&(p)(&mut reader)));
             current_case += 1;
         }
     }
 
-    /// Consumes the test engine, executing test cases in parallel.
+    /// Consumes the test engine, executing a parser and solver once per test case.
     ///
     /// # Panics
     ///
     /// This method panics in the event of an I/O error.
     #[cfg(feature = "parallel")]
-    pub fn run_parallel<
+    pub fn run<
         D: Sized + Send + Sync,
+        R: Display + Sized + Send,
         P: Fn(&mut InputReader) -> D,
-        S: Fn(&D) -> String + Sync
+        S: Fn(&D) -> R + Sync
     >
         (
         self,
@@ -123,12 +162,17 @@ impl<I: AsRef<Path>, O: AsRef<Path>> TestEngine<I, O> {
         let mut data = Vec::with_capacity(0);
         data.reserve_exact(case_count);
         for _ in 0..case_count {
-            data.push((p(&mut reader), String::with_capacity(0)));
+            data.push((p(&mut reader), None));
         }
-        data.par_iter_mut().for_each(|d| d.1 = s(&d.0));
-        for (i, d) in data.iter().enumerate() {
-            write!(writer, "Case #{}:{}", i + 1, d.1)
-                .expect("could not write test result to output file");
+        data.par_iter_mut().for_each(|d| d.1 = Some(s(&d.0)));
+        for (i, &(_, ref r)) in data.iter().enumerate() {
+            writer.write_test_result(
+                i + 1,
+                match *r {
+                    Some(ref x) => x,
+                    None => unreachable!(),
+                },
+            );
         }
     }
 }
@@ -240,14 +284,20 @@ impl OutputWriter {
         )
     }
 
-    /// Writes the string "Case #N:" (where `N` is the given case number) to the output file.
-    fn write_case_number(&mut self, case: usize) {
-        self.write_all(b"Case #")
-            .expect("could not write case number to output file");
-        self.write_all(case.to_string().as_bytes())
-            .expect("could not write case number to output file");
-        self.write_all(b":")
-            .expect("could not write case number to output file");
+    /// Writes a test result to the output file.
+    fn write_test_result<R: Display>(&mut self, case: usize, result: R) {
+        let case_prefix = "Case #";
+        let case_number = case.to_string();
+        let case_colon = ":";
+        let r = result.to_string();
+        let mut output = String::with_capacity(0);
+        output.reserve_exact(case_prefix.len() + case_number.len() + case_colon.len() + r.len(),);
+        output.push_str(case_prefix);
+        output.push_str(&case_number);
+        output.push_str(case_colon);
+        output.push_str(&r);
+        self.write_all(output.as_bytes())
+            .expect("could not write test result to output file");
     }
 }
 

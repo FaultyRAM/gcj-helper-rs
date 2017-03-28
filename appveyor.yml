@@ -6,63 +6,63 @@ environment:
     - ARCH: i586
       ABI: msvc
       CHANNEL: stable
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: i586
       ABI: msvc
       CHANNEL: beta
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: i586
       ABI: msvc
       CHANNEL: nightly
-      EXTRA_ARGS: --features clippy
+      EXTRA_FEATURES: clippy
     - ARCH: i686
       ABI: gnu
       CHANNEL: stable
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: i686
       ABI: gnu
       CHANNEL: beta
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: i686
       ABI: gnu
       CHANNEL: nightly
-      EXTRA_ARGS: --features clippy
+      EXTRA_FEATURES: clippy
     - ARCH: i686
       ABI: msvc
       CHANNEL: stable
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: i686
       ABI: msvc
       CHANNEL: beta
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: i686
       ABI: msvc
       CHANNEL: nightly
-      EXTRA_ARGS: --features clippy
+      EXTRA_FEATURES: clippy
     - ARCH: x86_64
       ABI: gnu
       CHANNEL: stable
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: x86_64
       ABI: gnu
       CHANNEL: beta
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: x86_64
       ABI: gnu
       CHANNEL: nightly
-      EXTRA_ARGS: --features clippy
+      EXTRA_FEATURES: clippy
     - ARCH: x86_64
       ABI: msvc
       CHANNEL: stable
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: x86_64
       ABI: msvc
       CHANNEL: beta
-      EXTRA_ARGS:
+      EXTRA_FEATURES:
     - ARCH: x86_64
       ABI: msvc
       CHANNEL: nightly
-      EXTRA_ARGS: --features clippy
+      EXTRA_FEATURES: clippy
 install:
   - SET PATH=%PATH%;%USERPROFILE%\.cargo\bin;C:\MinGW\bin
   - SET TARGET=%ARCH%-pc-windows-%ABI%
@@ -78,8 +78,11 @@ install:
   - rustdoc --version
   - cargo --version
 build_script:
-  - cargo build -vv --target=%TARGET% %EXTRA_ARGS%
-  - cargo build -vv --target=%TARGET% %EXTRA_ARGS% --example gcj-2016-qualifier-a
-  - cargo doc -vv --target=%TARGET% %EXTRA_ARGS%
+  - cargo build -vv --target=%TARGET% --features "%EXTRA_FEATURES%"
+  - cargo build -vv --target=%TARGET% --features "parallel %EXTRA_FEATURES%"
+  - cargo build -vv --target=%TARGET% --example gcj-2016-qualifier-a --features "%EXTRA_FEATURES%"
+  - cargo build -vv --target=%TARGET% --example gcj-2016-qualifier-a --features "parallel %EXTRA_FEATURES%"
+  - cargo doc -vv --target=%TARGET% --features "%EXTRA_FEATURES%"
+  - cargo doc -vv --target=%TARGET% --features "parallel %EXTRA_FEATURES%"
 test_script:
-  - cargo test -vv --target=%TARGET% %EXTRA_ARGS%
+  - cargo test -vv --target=%TARGET% --features "parallel %EXTRA_FEATURES%"

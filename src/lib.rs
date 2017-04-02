@@ -29,8 +29,8 @@
 //! To execute test cases, you need to create a `TestEngine` and call `TestEngine::run()`.
 //! `TestEngine::run()` accepts two closures:
 //!
-//! 1. A `parser` that reads from an input file and returns the data for one test case.
-//! 2. A `solver` that performs logic on the data for one test case and returns a result, encoded
+//! 1. A *parser* that reads from an input file and returns the data for one test case.
+//! 2. A *solver* that performs logic on the data for one test case and returns a result, encoded
 //!    as a `Display` type.
 //!
 //! This two-step process to writing solutions is useful for two reasons:

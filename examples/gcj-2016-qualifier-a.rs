@@ -16,21 +16,22 @@ use gcj_helper::TestEngine;
 
 fn main() {
     TestEngine::from_args().run(
-        |input| input.read_next_line(),
-        |data| format!(" {}\n", solve(data.clone())),
+        |input| u32::from_str_radix(input.read_next_line(), 10).unwrap(),
+        |data| format!(" {}\n", solve(*data)),
     )
 }
 
-fn solve(mut step: String) -> String {
-    if step == "0" {
+fn solve(input: u32) -> String {
+    if input == 0 {
         return "INSOMNIA".to_string();
     }
+    let mut step = input;
+    let mut step_s = step.to_string();
+    let mut step_mul = 2;
     let mut digits_found = [false; 10];
     let mut digits_count = 0;
-    let mut step_mul = 2;
-    let number = u32::from_str_radix(&step, 10).unwrap();
     loop {
-        for digit in step.bytes() {
+        for digit in step_s.bytes() {
             match digit {
                 0x30...0x39 => {
                     let i = (digit - 0x30) as usize;
@@ -38,14 +39,15 @@ fn solve(mut step: String) -> String {
                         digits_found[i] = true;
                         digits_count += 1;
                         if digits_count >= digits_found.len() {
-                            return step.to_string();
+                            return step_s.clone();
                         }
                     }
                 }
                 _ => unreachable!(),
             }
         }
-        step = (number * step_mul).to_string();
+        step = input * step_mul;
+        step_s = step.to_string();
         step_mul += 1;
     }
 }

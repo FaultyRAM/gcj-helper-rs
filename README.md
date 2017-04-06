@@ -18,7 +18,7 @@ use gcj_helper::TestEngine;
 
 fn main() {
     TestEngine::new("./foo.in", "./foo.out").run(
-        |input| input.read_next_line(),
+        |input| input.read_next_line().to_owned(),
         |data| format!(" {}\n", data),
     );
 }
@@ -43,7 +43,7 @@ You can also manually add `gcj-helper` to your crate, though doing so is slower 
 `cargo new --template`. To do so, add this line to your `[dependencies]` in `Cargo.toml`:
 
 ```toml
-gcj-helper = "0.4"
+gcj-helper = "0.5"
 ```
 
 And add this line to your crate root:
@@ -60,13 +60,13 @@ this relies on third-party dependencies (currently [`rayon`][7]), resulting in s
 If you'd like to enable this feature, open `Cargo.toml` and replace the following line:
 
 ```toml
-gcj-helper = "0.4"
+gcj-helper = "0.5"
 ```
 
 With this line:
 
 ```toml
-gcj-helper = { version = "0.4", features = ["parallel"] }
+gcj-helper = { version = "0.5", features = ["parallel"] }
 ```
 
 ## License
